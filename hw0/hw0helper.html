@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #00ffff
+}
+
+body {
+
+  overflow: hidden;
+}
+</style>
+
+
+</head>
+<div id="info">
+<h1>Homework01</h1>
+<button id = 'toggle'>turn </button>
+
+</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<body> 
+
+
+<script>
+
+
+
+var camera, scene, renderer;
+var clock;
+var train;
+var angle  = 4.71225;
+var flag = 1; 
+var flag2 = true; 
+
+var pos = -0.785375;
+var turn = true;
+
+
+init();
+animate();
+
+$('#toggle').click(
+function(){
+   turn = !turn;
+   flag2 = !flag2;
+});
+
+function init() {
+
+  scene = new THREE.Scene();
+
+  clock = new THREE.Clock();
+  
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+  camera.position.set (0, 250, 0);
+  let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  var gridXZ = new THREE.GridHelper(200, 20, 'red', 'white');
+  scene.add(gridXZ);
+ 
+ ////////////////////////////////////////////////////////////////
+  train = new THREE.Group();
+  trainbody = new THREE.Mesh (new THREE.BoxGeometry (10,10,30), new THREE.MeshNormalMaterial());
+  head = new THREE.Mesh (new THREE.CylinderGeometry(5,5,15), new THREE.MeshNormalMaterial());
+  head.position.set(0,10,-10)
+  train.add(trainbody);
+  train.add(head);
+
+  scene.add (train);
+}
+
+
+
+
+function animate() {
+  var radius = 50;
+  var dt = clock.getDelta();
+
+
+  if(flag2){
+	  if(flag === 1){
+		 train.position.set (39.26875+radius* Math.cos(angle), 5, -radius* Math.sin(angle));
+		 train.rotation.y = angle;
+		 angle += 15*0.10472*dt;
+		 if(train.position.z < -49.99){
+			
+			flag = 2; 
+		 }
+	  }
+	  
+	  if(flag === 2){
+		 train.position.set (39.26875 + pos , 5, -50);
+		 pos -= 78.5375*dt;
+		 if(train.position.x <= -39.26875){
+			 flag = 3;  
+			 pos = 0;
+		 }
+	  }  
+	  
+	  if(flag === 3){
+		 train.position.set (-39.26875 + radius* Math.cos(angle), 5, -radius* Math.sin(angle));
+		 train.rotation.y = angle;
+		 angle += 15*0.10472*dt;
+		  if(train.position.z > 49.99){    
+			 flag = 4; 	  
+		 }     
+	  }  
+	 
+	  if(flag === 4){
+		 train.position.set (-39.26875 + pos , 5, 50);
+		 pos += 78.5375*dt;
+		 if(train.position.x >= 39.26875){
+			 flag = 1;  
+			 pos = 0;
+		 }
+	  }  
+  }
+  //console.log (clock.getDelta());
+  
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+  
+}
+
+
+
+</script>
+</body>
+
+</html>
