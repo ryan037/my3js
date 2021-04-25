@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #00ffff
+}
+
+body {
+  overflow: hidden;
+}
+
+
+</style>
+</head>
+
+<div id="info">
+<h1>Homework04</h1>
+<p>press <span style="color:yellow">space</span> and press <span style="color:yellow">arrow keys</span> to control speed and angle</p>
+
+</div>
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js">
+</script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+<script src="https://raw.githack.com/mrdoob/three.js/dev/examples/js/misc/Gyroscope.js"></script>
+<script src="model3.js"></script>
+<script src="keyframes3.js"></script>
+
+<body> 
+
+<script>
+
+
+var camera, scene, renderer, controls;
+var body, head, lleg, rleg, larm, rarm;
+
+const WW = 6;
+const HH = 18;
+
+var theta1 = 0;
+var theta2 = 0;
+
+var flag = 0;
+
+var clock = new THREE.Clock();
+var ts = clock.getElapsedTime();
+var ts_stand_end = 0;
+var ts_walk_end = 0;
+
+var pos = new THREE.Vector3();
+var vel = new THREE.Vector3();
+var force = new THREE.Vector3();
+var power, angle;
+
+var keyboard = new KeyboardState();
+var walkState = "STAND";
+
+(function() {
+  Math.clamp = function(val,min,max){
+    return Math.min(Math.max(val,min),max);
+    
+}})();
+///////////////////////////////////////////////////////////////
+init();
+animate();
+
+
+
+
+function init() {
+
+  scene = new THREE.Scene();
+
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 2000);
+
+  //camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+  camera.position.set(100, 35, 100);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  var gridXZ = new THREE.GridHelper(10000, 100, 'red', 'white');
+  scene.add(gridXZ);
+
+  ////////////////////////////////////////////////////////
+  buildSteve();
+  
+  gyro = new THREE.Gyroscope();
+  gyro.add (camera)
+  body.add(gyro);
+  body.rotation.y = -Math.PI;
+
+  power = 0.0;
+  angle = 0.0;
+  
+  window.addEventListener('resize', onWindowResize, false);
+
+}
+
+
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+var flag1 = 0;
+var flag2 = 0;
+var flag3 = 0;
+
+function update(dt) {
+
+  keyboard.update();
+  
+  
+  
+  if (keyboard.pressed('space')) { // move to S2W and walk
+	
+	if(flag1 == 0){
+	   power = 0.1;
+	   flag3 = 0;
+	   walkState = "S2W"; 
+	   if(flag2 == 0){
+	     flag2 = 1;
+	     ts = clock.getElapsedTime();
+	   }	
+	}
+    if(flag1 == 1){
+	   flag2 = 0;
+	   walkState = "WALK"; 
+	}
+  }
+  
+  
+  if (keyboard.up('space')) { // move to W2S
+	
+	if(flag1 == 1){
+	   power = 0;
+	   walkState = "W2S"; 
+	   if(flag2 == 0){
+	     flag2 = 1;
+	     ts = clock.getElapsedTime();
+	   }	
+	}
+  }
+  
+  if(flag3 == 1){ // move to stand  
+	   flag1 = 0;
+	   flag2 = 0;
+	   walkState = "STAND"; 
+  }
+  
+  switch (walkState) {
+    case 'STAND':
+	  console.log('... in stand');
+      intKey = keyframeStand(clock.getElapsedTime(), TStand);
+      break;
+    case 'S2W':
+      console.log('... in S2W');
+      intKey = keyframeS2W(clock.getElapsedTime(), TS2W);
+      break;
+    case 'WALK':
+      console.log('... in walk');
+      intKey = keyframeWalk(clock.getElapsedTime(), TWalk);
+      break;
+	case 'W2S':
+      console.log('... in W2S');
+      intKey = keyframeW2S(clock.getElapsedTime(), TW2S);
+      break;
+  }
+  
+  lleg.rotation.x = intKey[0];
+  rleg.rotation.x = intKey[1];  
+  larm.rotation.x = intKey[2];
+  rarm.rotation.x = intKey[3];  
+  ///////////////////////////////////////////////////////////////////////////////////////
+  
+  angle = 1.5 * Math.PI + Math.atan2(vel.x, vel.z); 
+             
+  if (keyboard.pressed("up"))  
+ 	  power *= 1.09;        
+  if (keyboard.pressed("down"))  
+ 	  power /= 1.09;   
+ 	
+  Power = Math.clamp (power, 0, 0.3); 
+    console.log(Power);
+
+  
+  var angle_thrust = angle;
+  if (keyboard.pressed("left"))
+    angle_thrust += 0.8;
+  if (keyboard.pressed("right"))
+    angle_thrust -= 0.8;
+    
+  // compute force 
+  //thrust = power * Rot (angle_thrust) (1,0,0)
+
+  var thrust = new THREE.Vector3(1,0,0).multiplyScalar(power).applyAxisAngle (new THREE.Vector3(0,1,0), angle_thrust);
+  force.copy (thrust);
+  force.add(vel.clone().multiplyScalar(-2))
+
+  // eulers
+  vel.add(force.clone().multiplyScalar(dt));
+  
+  if(walkState == 'W2S' || walkState == 'STAND')
+     pos.add(vel.clone().multiplyScalar(dt/10));
+  else
+     pos.add(vel.clone().multiplyScalar(dt));
+  pos.y = HH;
+  
+  body.position.copy(pos);
+  body.rotation.y = Math.PI/2 + angle;
+}
+
+function animate() {
+
+  let dt = clock.getDelta();  
+  update(dt); 
+   
+  render();
+  requestAnimationFrame(animate);
+  //controls.update(); //當camera改變 更新orbit
+}
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+
+
+
+</script>
+</body>
+
+</html>
