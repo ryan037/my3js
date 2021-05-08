@@ -5,7 +5,7 @@ function buildSteve() {
   
   var loader = new THREE.TextureLoader();
   loader.setCrossOrigin('');
-  texture = loader.load ('https://i.imgur.com/IejOuMK.png');
+  texture = loader.load ('https://i.imgur.com/1utWTdm.png');
 
   
   head = buildHead2(WW*2,WW*2,WW*2); 

@@ -110,8 +110,7 @@ function keyframeS2W(t, T) {  // non-periodic
   if (t - ts > T) { // end of stand
     
     ts = t; // reset ts to start of walk
-    state = 'S2W';
-	flag1 = 1;
+    walkState = "WALK"; 
     // end of S2W: return last frame
     return [poseS2W2.lleg, poseS2W2.rleg, poseS2W2.larm, poseS2W2.rarm];
   }
@@ -157,14 +156,12 @@ function keyframeWalk(t, T) { // walk; periodic
 }
 
 function keyframeW2S(t, T) {  // non-periodic
-    console.log(t - ts);
 
   if (t - ts > T) { // end of walk
-
+    console.log("11");
 	ts = t; 
-    state = 'W2S';
-    flag3 = 1;
-
+    walkState = 'STAND';
+    flag1 = 0;
     // end of S2W: return last frame
     return [poseW2S2.lleg, poseW2S2.rleg, poseW2S2.larm, poseW2S2.rarm];
   }
