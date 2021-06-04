@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 0px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #00ffff
+}
+
+body {
+
+  overflow: hidden;
+}
+</style>
+
+
+</head>
+<div id="info">
+<h1>Homework05</h1>
+
+</div>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="Agent.js"></script>
+<script src="Path.js"></script>
+
+<body> 
+
+
+<script>
+// IIFE addition of clamp function
+( function( ) {
+      Math.clamp = function(val,min,max) {
+          return Math.min(Math.max(val,min),max);
+      } 
+} )();
+
+function BuildAgent(){
+	
+  let pos = new THREE.Vector3(-100,0,0);
+  let mesh = new THREE.Mesh (new THREE.CircleGeometry(1,20), new THREE.MeshBasicMaterial({color:'cyan'}));
+  mesh.material.color = new THREE.Color().setHSL (Math.random(), 0.5, .7);
+
+	
+  let agent = new Agent (pos, mesh);
+  agent.vel.set (4,-2,0);
+  
+  agents.push(agent);
+  return;
+}
+
+function findNbhd(agents) {
+  let i, j, dst;
+  let nAgents = agents.length;
+  
+  // 這樣的 double-for-loop對嗎？
+  agents.forEach(function(agent){agent.nbhd=[]});
+  
+  for (i = 0; i < nAgents - 1; i++) {
+    for (j = i + 1; j < nAgents; j++) {
+      dst = agents[i].distanceTo(agents[j])
+      if (dst < 3) { // NBHD = 20
+        agents[i].addNbr(agents[j])
+        agents[j].addNbr(agents[i])
+      }
+    }
+  }
+}
+
+var camera, scene, renderer;
+var agents = [];
+
+var radius = 4;
+var p1 = new THREE.Vector3 (-100,0,0);
+var p2 = new THREE.Vector3 (-50,20,0);
+var p3 = new THREE.Vector3 (0,0,0);
+var p4 = new THREE.Vector3 (50,20,0);
+var p5 = new THREE.Vector3 (100,0,0);
+var count=0;
+
+init();
+animate();
+
+
+
+function init() {
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x888888);
+  document.body.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-100, 100, 100, -100, -10, 100);
+  camera.position.z = 10;
+
+  let grid = new THREE.GridHelper (200,20, 'red','white');
+  grid.rotation.x = -Math.PI/2;
+  scene.add (grid);
+ 
+////////////////////////////////////// creat ball
+  BuildAgent();
+////////////////////////////////////// creat Path
+  
+  let path1 = new Path(p1,p2,radius);
+  let path2 = new Path(new THREE.Vector3 (-50,20,0),new THREE.Vector3 (0,0,0),radius);
+  let path3 = new Path(new THREE.Vector3 (0,0,0),new THREE.Vector3 (50,20,0),radius);
+  let path4 = new Path(new THREE.Vector3 (50,20,0),new THREE.Vector3 (100,0,0),radius);
+
+  path1.creatPath();
+  path2.creatPath();
+  path3.creatPath();
+  path4.creatPath();
+  /////////////////////////////////////////////////////////
+
+}
+
+
+
+
+
+function animate() {
+  requestAnimationFrame(animate);
+  render();
+  findNbhd(agents);
+
+  let dt = 0.1;
+  count+=1;
+
+  agents.forEach(function(agent) {
+    agent.update(dt);
+	if (agent.pos.x > 100) agent.pos.set(-100,0,0);
+  });
+  
+  
+  if(count%30 == 0 && agents.length <= 40){
+  	setTimeout(BuildAgent, 1000);
+  }
+}
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+
+</script>
+</body>
+
+</html>
